@@ -7,13 +7,14 @@
 # todo Общие автомобили
 # todo Ввод задним числом
 
-import config
 import sqlite3
 import telebot
 import datetime
 from telebot import types
 
-# Uncomment line and paste your token for bot from @BotFather
+# This module contains a token from @BotFather
+import config
+
 API_TOKEN = config.token
 bot = telebot.TeleBot(API_TOKEN)
 
