@@ -3,7 +3,6 @@
 # todo Добавить возможность выбора автомобиля
 # todo Добавить обработку разных видов расходов
 # todo Добавить выбор валюты
-# todo Отмена действия
 # todo Общие автомобили
 # todo Ввод задним числом
 
@@ -97,82 +96,132 @@ def process_START_step(message):
         user_id = message.chat.id
         bot.send_message(user_id,
                          'Запись трат на "Топливо" находится в разработке! Плюньте в разработчика, и он поморщится! vk.com/jensanf')
+    if (message.text == '/cancel'):
+        user_id = message.chat.id
+        bot.send_message(user_id, 'Закрыто. Приходите еще!')
 
-@bot.message_handler(commands=['бензин', 'fuel','бенз','б'])
+@bot.message_handler(commands=['история','history','и'])
 def send_welcome(message):
+    msg = bot.send_message(message.chat.id,
+                           'Вы вошли в отложенный ввод, '
+                           + '\nвведите дату расхода в формате: дд/мм/гг')
+    bot.register_next_step_handler(msg, process_selectDate_step)
+def process_selectDate_step(message):
     user_id = message.chat.id
     bill = Bill(user_id)
     bill_dict[user_id] = bill
-    bill.date = (datetime.datetime.fromtimestamp(message.date))
-    bill.name = message.chat.first_name
-    bill.kind = 'Топливо'
-
+    bill.date = message.text
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add('Мойка', 'Ремонт', 'Расходники', 'Топливо')
     msg = bot.send_message(message.chat.id,
-        'Для учёта топлива ответьте на 5 вопросов: '
-        + '\n 1. Текущий пробег автомобиля?')
-    bot.register_next_step_handler(msg, process_distance_step)
+        'Привет, я твой личный финансовый помошник по расходам автомобиля!'
+        + '\nВыберите вид расхода.', reply_markup=markup)
+    bot.register_next_step_handler(msg, process_START_step)
+def process_START_step(message):
+    if (message.text == 'Мойка'):
+        user_id = message.chat.id
+        bot.send_message(user_id,
+                         'Запись трат на "Мойку" находится в разработке! Плюньте в разработчика, и он поморщится! vk.com/jensanf')
+    if (message.text == 'Ремонт'):
+        user_id = message.chat.id
+        bot.send_message(user_id,
+                         'Запись трат на "Ремонт" находится в разработке! Плюньте в разработчика, и он поморщится! vk.com/jensanf')
+    if (message.text == 'Расходники'):
+        user_id = message.chat.id
+        bot.send_message(user_id,
+                         'Запись трат на "Расходники" находится в разработке! Плюньте в разработчика, и он поморщится! vk.com/jensanf')
+    if (message.text == 'Топливо'):
+        user_id = message.chat.id
+        bot.send_message(user_id,
+                         'Запись трат на "Топливо" находится в разработке! Плюньте в разработчика, и он поморщится! vk.com/jensanf')
+    if (message.text == '/cancel'):
+        user_id = message.chat.id
+        bot.send_message(user_id, 'Закрыто. Приходите еще!')
+
+@bot.message_handler(commands=['бензин', 'fuel','бенз','б'])
+def send_welcome(message):
+        user_id = message.chat.id
+        bill = Bill(user_id)
+        bill_dict[user_id] = bill
+        bill.date = (datetime.datetime.fromtimestamp(message.date))
+        bill.name = message.chat.first_name
+        bill.kind = 'Топливо'
+
+        msg = bot.send_message(message.chat.id,
+            'Для учёта топлива ответьте на 5 вопросов: '
+            + '\n 1. Текущий пробег автомобиля? (1/5)')
+        bot.register_next_step_handler(msg, process_distance_step)
 def process_distance_step(message):
     try:
         user_id = message.chat.id
-        distance = message.text
-        if not distance.replace(',', '').isdigit():
-            msg = bot.send_message(user_id, 'Это должно быть число. Какой у вашего автомобиля пробег?')
-            bot.register_next_step_handler(msg, process_distance_step)
-            return
-        bill = bill_dict[user_id]
-        bill.distance = isfloat(distance)
-        print(bill.distance)
-        msg = bot.send_message(user_id, '2. Сколько литров Вы заправили?')
-        bot.register_next_step_handler(msg, process_volume_step)
+        if (message.text == '/cancel'):
+            bot.send_message(user_id, 'Закрыто. Приходите еще!')
+        else:
+            distance = message.text
+            if not distance.replace(',', '').isdigit():
+                msg = bot.send_message(user_id, 'Это должно быть число. Какой у вашего автомобиля пробег?')
+                bot.register_next_step_handler(msg, process_distance_step)
+                return
+            bill = bill_dict[user_id]
+            bill.distance = isfloat(distance)
+            print(bill.distance)
+            msg = bot.send_message(user_id, '2. Сколько литров Вы заправили? (2/5)')
+            bot.register_next_step_handler(msg, process_volume_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 def process_volume_step(message):
     try:
         user_id = message.chat.id
-        volume = message.text
-        if not volume.replace(',', '').isdigit():
-            msg = bot.send_message(message.chat.id, 'Это должно быть число. На сколько литров Вы заправились?')
-            bot.register_next_step_handler(msg, process_volume_step)
-            return
-        bill = bill_dict[user_id]
-        bill.volume = isfloat(volume)
-        print(bill.volume)
-        msg = bot.send_message(message.chat.id, '3. На какую сумму Вы заправились?')
-        bot.register_next_step_handler(msg, process_costs_step)
+        if (message.text == '/cancel'):
+            bot.send_message(user_id, 'Закрыто. Приходите еще!')
+        else:
+            volume = message.text
+            if not volume.replace(',', '').isdigit():
+                msg = bot.send_message(message.chat.id, 'Это должно быть число. На сколько литров Вы заправились?')
+                bot.register_next_step_handler(msg, process_volume_step)
+                return
+            bill = bill_dict[user_id]
+            bill.volume = isfloat(volume)
+            print(bill.volume)
+            msg = bot.send_message(message.chat.id, '3. На какую сумму Вы заправились?')
+            bot.register_next_step_handler(msg, process_costs_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 def process_costs_step(message):
     try:
-        con = sqlite3.connect('drivers.db')
-        cur = con.cursor()
         user_id = message.chat.id
-        costs = message.text
-        if not costs.replace(',', '').isdigit():
-            msg = bot.send_message(message.chat.id, 'Это должно быть число. Какую сумму Вы потратили?')
-            bot.register_next_step_handler(msg, process_costs_step)
-            return
-        bill = bill_dict[user_id]
-        bill.costs = isfloat(costs)
-        bill.price = round(float(bill.costs)/float(bill.volume), 2)
-        print(bill.costs)
-        print(format(float(bill.costs)/float(bill.volume), '.2f'))
+        if (message.text == '/cancel'):
+            bot.send_message(user_id, 'Закрыто. Приходите еще!')
+        else:
+            con = sqlite3.connect('drivers.db')
+            cur = con.cursor()
+            costs = message.text
+            if not costs.replace(',', '').isdigit():
+                msg = bot.send_message(message.chat.id, 'Это должно быть число. Какую сумму Вы потратили?')
+                bot.register_next_step_handler(msg, process_costs_step)
+                return
+            bill = bill_dict[user_id]
+            bill.costs = isfloat(costs)
+            bill.price = round(float(bill.costs)/float(bill.volume), 2)
+            print(bill.costs)
+            print(format(float(bill.costs)/float(bill.volume), '.2f'))
 
-        cur.execute('SELECT ID FROM users WHERE chatID=(?)', (user_id,))
-        bill.number = len(cur.fetchall()) + 1
+            cur.execute('SELECT ID FROM users WHERE chatID=(?)', (user_id,))
+            bill.number = len(cur.fetchall()) + 1
 
-        bot.send_message(user_id, 'Спасибо за ответы, '+bill.name+'! \nЭто Ваш '
-                         + str(message.chat.first_name) + ' счет'
-                         + '\n Дата: ' + str(datetime.datetime.fromtimestamp(message.date))
-                         + '\n Пробег: ' + str(bill.distance) + ' км.'
-                         + '\n Заправлено: ' + str(bill.volume) + ' л. по '
-                         + str(bill.price) + ' руб./л'
-                         + '\n Сумма чека: ' + str(bill.costs) + ' руб.')
-        params = (bill.uid, bill.name, bill.kind, bill.distance, bill.costs, bill.price, bill.volume)
-        cur.execute("INSERT INTO users VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, NULL)", params)
-        con.commit()
-        cur.execute('SELECT * FROM users')
-        print(cur.fetchall())
-        con.close()
+            bot.send_message(user_id, 'Спасибо за ответы, '+bill.name+'! \nЭто Ваш '
+                             + str(message.chat.first_name) + ' счет'
+                             + '\n Дата: ' + str(datetime.datetime.fromtimestamp(message.date))
+                             + '\n Пробег: ' + str(bill.distance) + ' км.'
+                             + '\n Заправлено: ' + str(bill.volume) + ' л. по '
+                             + str(bill.price) + ' руб./л'
+                             + '\n Сумма чека: ' + str(bill.costs) + ' руб.')
+            params = (bill.uid, bill.name, bill.kind, bill.distance, bill.costs, bill.price, bill.volume)
+            cur.execute("INSERT INTO users VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, NULL)", params)
+            con.commit()
+            cur.execute('SELECT * FROM users')
+            print(cur.fetchall())
+            con.close()
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
